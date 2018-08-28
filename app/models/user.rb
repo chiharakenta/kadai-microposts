@@ -33,4 +33,19 @@ class User < ApplicationRecord
   def feed_microposts
     Micropost.where(user_id: self.following_ids + [self.id])
   end
+  
+  def like(other_micropost)
+    unless self.micropost == other_user.micropost
+      self.post_rels.find_or_create_by(like_id: other_user.micropost)
+    end
+  end
+  
+  def unlike(other_micropost)
+    post_rel = self.post_rels.find_by(like_id: other_user.micropost)
+    post_rel.destroy if post_rel
+  end
+  
+  def likes?(other_micropost)
+    self.likes.include?(other_user.micropost)
+  end
 end
