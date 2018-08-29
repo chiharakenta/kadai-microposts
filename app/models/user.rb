@@ -12,8 +12,26 @@ class User < ApplicationRecord
   has_many :reverses_of_relationship, class_name: 'Relationship', foreign_key: 'follow_id'
   has_many :followers, through: :reverses_of_relationship, source: :user
   
-  has_many :post_rels, foreign_key: 'like_id'
+  has_many :post_rels
   has_many :likes, through: :post_rels, source: :like
+  has_many :reverses_of_post_rel, class_name: 'PostRel', foreign_key: 'like_id', dependent: :destroy
+  has_many :liked, through: :reverses_of_post_rel, source: :user
+  
+  
+  def like(other_micropost)
+    unless self.microposts == other_micropost
+      self.post_rels.find_or_create_by(like_id: other_micropost.id)
+    end
+  end
+  
+  def unlike(other_micropost)
+    post_rel = self.post_rels.find_by(like_id: other_micropost.id)
+    post_rel.destroy if post_rel
+  end
+  
+  def likes?(other_micropost)
+    self.likes.include?(other_micropost)
+  end
   
   def follow(other_user)
     unless self == other_user
@@ -32,20 +50,5 @@ class User < ApplicationRecord
   
   def feed_microposts
     Micropost.where(user_id: self.following_ids + [self.id])
-  end
-  
-  def like(other_micropost)
-    unless self.micropost == other_user.micropost
-      self.post_rels.find_or_create_by(like_id: other_user.micropost)
-    end
-  end
-  
-  def unlike(other_micropost)
-    post_rel = self.post_rels.find_by(like_id: other_user.micropost)
-    post_rel.destroy if post_rel
-  end
-  
-  def likes?(other_micropost)
-    self.likes.include?(other_user.micropost)
   end
 end
